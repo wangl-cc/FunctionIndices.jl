@@ -1,9 +1,15 @@
 module FunctionIndices
 
 using MappedArrays
-using Static
 
 export FI, NotIndex, not, optimized
+
+# this is a copy of Static.jl
+# https://github.com/SciML/Static.jl/blob/master/src/bool.jl
+# don't using Static.jl because it requires julia v1.2
+abstract type StaticBool{bool} <: Integer end
+struct True <: StaticBool{true} end
+struct False <: StaticBool{false} end
 
 """
     AbstractFunctionIndex
