@@ -169,12 +169,20 @@ not(x::AbstractArray{<:Bool}) = map(!, x)
 # Optimize for some special cases
 to_index(::True, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer}) =
     (n = parent(I); [first(ind):(n-1); (n+1):last(ind)])
-to_index(::True, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:AbstractUnitRange{<:Integer}}) = (
-    r = parent(I); isempty(r) ? collect(ind) :
-                   [first(ind):(first(r)-1); (last(r)+1):last(ind)]
+function to_index(
+    ::True,
+    ind::AbstractUnitRange{<:Integer},
+    I::AbstractNotIndex{<:AbstractUnitRange{<:Integer}},
 )
+    r = parent(I)
+    return isempty(r) ? collect(ind) : [first(ind):(first(r)-1); (last(r)+1):last(ind)]
+end
 # to_index for NotIndex{<:StepRange} is suboptimal for small size arrays
-function to_index(::True, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:StepRange{<:Integer}})
+function to_index(
+    ::True,
+    ind::AbstractUnitRange{<:Integer},
+    I::AbstractNotIndex{<:StepRange{<:Integer}},
+)
     r = parent(I)
     isempty(r) && return collect(ind) # collect ind for type stable
     sr = sort(r)
