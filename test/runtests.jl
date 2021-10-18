@@ -49,7 +49,10 @@ using OffsetArrays
     @testset "enable/disable optimization" begin
         @test to_indices(A, (not(0:2:2),))[1] isa Vector{Int}
         # disable optimization for not(::StepRange)
-        FunctionIndices.optimized(::Type{<:AbstractArray}, ::Type{<:NotIndex{<:StepRange}}) = False()
+        FunctionIndices.optimized(
+            ::Type{<:AbstractArray},
+            ::Type{<:NotIndex{<:StepRange}},
+        ) = False()
         @test to_indices(A, (not(0:2:2),))[1] isa Base.LogicalIndex
     end
 end
