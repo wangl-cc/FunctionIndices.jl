@@ -1,0 +1,6 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+InvertedIndices = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
