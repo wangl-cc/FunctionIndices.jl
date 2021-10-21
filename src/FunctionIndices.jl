@@ -2,14 +2,7 @@ module FunctionIndices
 
 using MappedArrays
 
-export FI, NotIndex, not, optimized
-
-# this is a copy of Static.jl
-# https://github.com/SciML/Static.jl/blob/master/src/bool.jl
-# don't using Static.jl because it requires julia v1.2
-abstract type StaticBool{bool} <: Integer end
-struct True <: StaticBool{true} end
-struct False <: StaticBool{false} end
+export FI, NotIndex, not
 
 """
     AbstractFunctionIndex
@@ -19,34 +12,46 @@ Supertype of all function index types.
 abstract type AbstractFunctionIndex end
 
 """
-    FunctionIndices.to_index(::StaticBool, ind, i)
+    FunctionIndices.to_index(::Type{T<:AbstractArray}, ind, i)
 
-Convert a `AbstractFunctionIndex` `i` to a array index with `ind`.
-The first argument of an optimized methods should be `True`,
-like `to_index(::True, ind, i)`.
+Convert a `AbstractFunctionIndex` `i` to a array index of type `T` with `ind`.
+By default, `to_index(::AbstractArray, ind, i)` will return a
+`Base.LogicalIndex{Bool, ReadonlyMappedArray{Bool...}}`.
 """
-@inline to_index(::StaticBool, ind, i) = Base.to_index(
+@inline to_index(::Type{T}, ind, i) where {T<:AbstractArray} = Base.to_index(
     # use mappedarray instead of map for less allocations and more information
     mappedarray(to_function(i), ind)::ReadonlyMappedArray{Bool},
-)
+) # no type assert here, because this methods will accept any T even T is not a LogicalIndex
 @inline Base.to_indices(A, inds, I::Tuple{AbstractFunctionIndex,Vararg{Any}}) = (
-    to_index(optimized(A, I[1]), _maybefirst(inds), I[1]),
+    to_index(indextype(A, I[1]), _maybefirst(inds), I[1]),
     to_indices(A, Base._maybetail(inds), Base.tail(I))...,
 )
 
 """
-    optimized(A, I) -> StaticBool
-    optimized(::Type{TA}, ::Type{TI}) -> StaticBool
+    indextype([A::AbstractArray,] I::AbstractFunctionIndex)
+    indextype([::Type{TA},] ::Type{TI})
 
-Determine whether try optimized indexing for given type of `TA` and `TI`.
-By default, it's `False()` for `TI<:AbstractFunctionIndex`
-and `True()` for `TI<:NotIndex`.
+Determine the index type which the function index type `TI`
+will be converted to by `Base.to_indices` for array type `TA`.
+By default, it's `AbstractArray`.
 
-Override `optimized(::Type{TA}, ::Type{TI})` to enable/disable optimized indexing
-for given type.
+!!! note
+
+    If you define a methods `indextype(::Type{TA}, ::Type{TI}) = T`,
+    while `to_index(::Type{T}, inds, I::TI)` is not defined,
+    the `to_indices` will not convert a index of type `TI` to a `T`,
+    but a `Base.LogicalIndex`, the default return type of `to_index`.
 """
-optimized(A, I) = optimized(typeof(A), typeof(I))
-optimized(::Type{<:AbstractArray}, ::Type{<:AbstractFunctionIndex}) = False()
+indextype(A::AbstractArray, I::AbstractFunctionIndex) = indextype(typeof(A), typeof(I))
+indextype(::Type{<:AbstractArray}, ::Type{<:AbstractFunctionIndex}) = AbstractArray
+
+"""
+    to_function(I::AbstractFunctionIndex)
+
+Converts a `AbstractFunctionIndex` to a `Function`.
+By default, `to_function(I::AbstractNotIndex)` returns `!in(parent(I))`.
+"""
+to_function
 
 _maybefirst(::Tuple{}) = Base.OneTo(1)
 _maybefirst(inds::Tuple) = inds[1]
@@ -84,16 +89,14 @@ There are some optimization for `NotIndex(x)` comparing to `FI(!in(x))`.
 For large arrays, this implementation may be faster.
 but for small arrays this implementation may be slower.
 See [performance comparing](@ref performance) for more details.
-
-Optimization can be enable/disable by override [`optimized`](@ref).
 """
 struct NotIndex{T} <: AbstractNotIndex{T}
     parent::T
 end
 Base.parent(I::NotIndex) = I.parent
 
-# enable optimization to NotIndex by default
-optimized(::Type{<:AbstractArray}, ::Type{<:NotIndex}) = True()
+# convert to Vector{Int} by default for NotIndex
+indextype(::Type{<:AbstractArray}, ::Type{<:NotIndex}) = Vector{Int}
 
 """
     not(x)
@@ -157,7 +160,7 @@ not(I::CartesianIndex) = NotCartesianIndex(I.I)
     to_indices(A, inds, Base.tail(I))
 # NotCartesianIndex{N} will be similar as Vararg{NotIndex{Int}, N}
 @inline Base.to_indices(A, inds, I::Tuple{NotCartesianIndex,Vararg{Any}}) = (
-    to_index(optimized(typeof(A), NotIndex{Int}), _maybefirst(inds), NotIndex(I[1].I[1])),
+    to_index(indextype(typeof(A), NotIndex{Int}), _maybefirst(inds), NotIndex(I[1].I[1])),
     to_indices(A, Base._maybetail(inds), (_tail_cartesian(I[1]), Base.tail(I)...))...,
 )
 # methods to override to_indices(A, ::Type{Any})
@@ -173,19 +176,21 @@ _tail_cartesian(I::NotCartesianIndex) = NotCartesianIndex(Base.tail(I.I))
 not(x::AbstractArray{<:Bool}) = map(!, x)
 
 # Optimize for some special cases
-to_index(::True, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer}) =
-    (n = parent(I); [first(ind):(n-1); (n+1):last(ind)])
+const TVInt = Type{Vector{Int}}
+to_index(::TVInt, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer}) =
+    (n = parent(I); [first(ind):(n-1); (n+1):last(ind)])::Vector{Int}
 function to_index(
-    ::True,
+    ::TVInt,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:AbstractUnitRange{<:Integer}},
 )
     r = parent(I)
-    return isempty(r) ? collect(ind) : [first(ind):(first(r)-1); (last(r)+1):last(ind)]
+    ret = isempty(r) ? collect(ind) : [first(ind):(first(r)-1); (last(r)+1):last(ind)]
+    return ret::Vector{Int}
 end
 # to_index for NotIndex{<:StepRange} is suboptimal for small size arrays
 function to_index(
-    ::True,
+    ::TVInt,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:StepRange{<:Integer}},
 )
@@ -203,7 +208,7 @@ function to_index(
             i += 1
         end
     end
-    return [first(ind):(first(r)-1); mids; (last(r)+1):last(ind)]
+    return [first(ind):(first(r)-1); mids; (last(r)+1):last(ind)]::Vector{Int}
 end
 
 end # module

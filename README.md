@@ -5,11 +5,14 @@
 [![GitHub](https://img.shields.io/github/license/wangl-cc/FunctionIndices.jl)](https://github.com/wangl-cc/FunctionIndices.jl/blob/master/LICENSE)
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://wangl-cc.github.io/FunctionIndices.jl/dev/)
 
-A small package allows to index arrays by a function via a simple wrapper `FI`. Besides, for indexing with `!=(n)`, `!in(itr)`, there is another wrapper `not` providing a convenient and optimized way, which is similar to `Not` of [`InvertedIndices`](https://github.com/JuliaData/InvertedIndices.jl), but faster in some cases.
+A small package allows to access array elements by a function via a simple wrapper `FI`.
+As a special case, for indexing with `!=(n)`, `!in(itr)`, there is another wrapper `not` providing a convenient and optimized way.
+The `not` is similar to `Not` of [`InvertedIndices`](https://github.com/JuliaData/InvertedIndices.jl), but faster in some cases.
+Besides, this package also provides ways to change the behavior for special array types and function index types.
+
+## Quick start to index with function index
 
 1-d indexing `A[FI(f)]` is equivalent to `A[map(f, begin:end)]`, multi-dimensional indexing `A[FI(f1), ..., FI(fn)]` is equivalent to `A[map(FI(f1), axes(A, 1)), ..., map(FI(fn), axes(A, n))]`.
-
-## Quick starts
 
 ```julia
 julia> using FunctionIndices
@@ -91,8 +94,4 @@ julia> A[Not(CartesianIndex(1, 2))] # equivalent to A[Not(3)]
 
 Besides, for out of bounds index like `A[4, 5]`, `A[not(4), not(5)]` is equivalent to `A[:, :]`, because inbounds indices are not equal to the given value, while `A[Not[4], Not(5)]` causes an error.
 
-## Performance
-
-Currently, there are some performance issues for `InvertedIndices` ([InvertedIndices#14][i14], [InvertedIndices#27][i27]). Thus, in most of case, `not` is much faster than `Not`. See documents for benchmark comparing.
-
-**Performance Tips:** For an `itr` a collection with more than 100 elements, `not(Set(itr))` may much faster than `not(itr)`.
+More about this package see [document](https://wangl-cc.github.io/FunctionIndices.jl/dev/).
