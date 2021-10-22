@@ -94,6 +94,8 @@ struct NotIndex{T} <: AbstractNotIndex{T}
     parent::T
 end
 Base.parent(I::NotIndex) = I.parent
+# ranges will not call this method, cause which override default `to_index`
+to_function(I::NotIndex{<:AbstractArray}) = !in(Set(parent(I)))
 
 # convert to Vector{Int} by default for NotIndex
 indextype(::Type{<:AbstractArray}, ::Type{<:NotIndex}) = Vector{Int}

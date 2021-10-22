@@ -39,10 +39,13 @@ Besides, for out of bounds index like `A[4, 5]`, `A[not(4), not(5)]` is equivale
 
 ## Performant tips for `not`
 
-* For a big amount of indices `I` should be exclude, convert it to a `Set` by `not(Set(I))` might faster `not(I)`.
-* For small array, the optimized `not(x)` might be slower than normal `FI(!in(x))`.
+For small array, the optimized `not(x)` might be slower in some case,
+see [performance comparing](@ref performance) for details.
 
-See [performance comparing](@ref performance) for details.
+There are some tips for better performance:
+* Use `FI(!in(x))` instead of `not(x)`.
+* Create your own "Not" type, see [below example](@ref intro-define) for details.
+* For a small array of indices like `not([1, 2, 3])`, `not(1, 2, 3)` will faster.
 
 ## Mechanism
 
@@ -54,7 +57,7 @@ There are three methods determining how to convert `AFI` to array index:
 * [`FunctionIndices.to_function`](@ref): this function is called in default method `to_index` and convert the given `AFI` to a function.
 * [`FunctionIndices.indextype`](@ref): this function is called in `to_indices` and returns a type as the `Type` argument of `to_index`. The `indextype` accepts two arguments, the type of array and type of a `AFI`.
 
-## Example to defined
+## [Example to define "Not"](@ref intro-define)
 
 If you don't like the default behavior of `not`, creating a new "Not" index type is easy:
 
