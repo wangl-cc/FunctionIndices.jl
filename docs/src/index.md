@@ -57,7 +57,7 @@ There are three methods determining how to convert `AFI` to array index:
 * [`FunctionIndices.to_function`](@ref): this function is called in default method `to_index` and convert the given `AFI` to a function.
 * [`FunctionIndices.indextype`](@ref): this function is called in `to_indices` and returns a type as the `Type` argument of `to_index`. The `indextype` accepts two arguments, the type of array and type of a `AFI`.
 
-## [Example to define "Not"](@ref intro-define)
+## [Example to define "Not"](@id intro-define)
 
 If you don't like the default behavior of `not`, creating a new "Not" index type is easy:
 
