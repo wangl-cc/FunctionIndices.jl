@@ -5,7 +5,7 @@ using FunctionIndices
 using Latexify
 
 makedocs(;
-    sitename = "FunctionIndex",
+    sitename = "FunctionIndices",
 )
 
 deploydocs(
