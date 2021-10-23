@@ -66,7 +66,7 @@ true
 julia> A[not(1:2)] == A[Not(1:2)]
 true
 
-julia> let bools = similar(Bool, A); A[not(bools)] == A[Not(bools)] end
+julia> let bools = rand(Bool, size(A)); A[not(bools)] == A[Not(bools)] end
 true
 ```
 

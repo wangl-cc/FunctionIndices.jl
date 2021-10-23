@@ -25,7 +25,7 @@ using InvertedIndices
 A[not(1)] == A[Not(1)]
 A[not(1, 2)] == A[Not(1, 2)]
 A[not(1:2)] == A[Not(1:2)]
-let bools = similar(Bool, A); A[not(bools)] == A[Not(bools)] end
+let bools = rand(Bool, size(A)); A[not(bools)] == A[Not(bools)] end
 ```
 
 But for `CartesianIndex`, `A[not(CartesianIndex(i, j,..., n))]` is equivalent to `A[not(i), not(j), ..., not(n)]` and will return a array with same dimension but `A[Not(CartesianIndex(i, j,..., n))]` will convert the `CartesianIndex` to a linear index and return a vector:
