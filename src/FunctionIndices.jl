@@ -175,7 +175,9 @@ not(I::CartesianIndex) = NotCartesianIndex(I.I)
 _tail_cartesian(I::NotCartesianIndex) = NotCartesianIndex(Base.tail(I.I))
 
 # bool array will not be convert to a FunctionIndex type
-not(x::AbstractArray{<:Bool}) = map(!, x)
+not(x::AbstractArray{Bool}) = map(!, x)
+not(x::Base.LogicalIndex{T,A}) where {T,A<:AbstractArray{Bool}} =
+    Base.LogicalIndex{T,A}(map(!, x.mask))
 
 # Optimize for some special cases
 const TVInt = Type{Vector{Int}}

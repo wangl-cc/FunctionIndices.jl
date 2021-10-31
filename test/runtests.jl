@@ -25,7 +25,8 @@ using OffsetArrays
         @test !isempty(A[not(1), not(2), not(2)])
         I = rand(Bool, 3)
         J = rand(Bool, 4)
-        @test A[not(I), not(J)] == A[.!I, .!J]
+        @test A[not(I), not(J)] == A[.!I, .!J] ==
+            A[not(Base.to_index(I)), not(Base.to_index(J))]
         OA = OffsetArray(A, 2:4, 0:3)
         @test OA[not(1), not(2)] == OA[axes(OA, 1).!=1, axes(OA, 2).!=2] == A[:, not(3)]
         @test A[not(2)] ==
