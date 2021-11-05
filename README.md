@@ -1,7 +1,7 @@
 # FunctionIndices
 
 [![Build Status](https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml)
-  [![codecov](https://codecov.io/gh/wangl-cc/FunctionIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/wangl-cc/FunctionIndices.jl)
+[![codecov](https://codecov.io/gh/wangl-cc/FunctionIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/wangl-cc/FunctionIndices.jl)
 [![GitHub](https://img.shields.io/github/license/wangl-cc/FunctionIndices.jl)](https://github.com/wangl-cc/FunctionIndices.jl/blob/master/LICENSE)
 [![Docs stable](https://img.shields.io/badge/docs-dev-stable.svg)](https://wangl-cc.github.io/FunctionIndices.jl/stable/)
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://wangl-cc.github.io/FunctionIndices.jl/dev/)
@@ -67,7 +67,7 @@ true
 julia> A[not(1:2)] == A[Not(1:2)]
 true
 
-julia> let bools = rand(Bool, size(A)); A[not(bools)] == A[Not(bools)] end
+julia> let I = rand(Bool, size(A)); A[not(I)] == A[Not(I)] end
 true
 ```
 
@@ -102,7 +102,7 @@ julia> A[not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # equivalent to A[not(1
 1×2 Matrix{Int64}:
  2  11
 
-julia> A[Not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # I don't know what is the meaning of this
+julia> A[Not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # seems an undefined behavior
 1×2 Matrix{Int64}:
  5  8
 ```
@@ -134,8 +134,7 @@ There optimizations are enabled only if `indextype` is defined as `Vector{Int}`:
 
 * `x::Integer` will be converted to an `Int` array where `x` is removed from given axe.
 * `x::OrdinalRange{<:Integer}`  will be converted to an `Int` array
-  which is a set difference[^1] of `ind` and `x`
-  where `ind` is the axes of given array at given dimension;
+  which is a set difference[^1] of given `ind` and `x`
 * `x::Base.Slice` will be converted to an empty `Int` array,
   when the slice represents the given axe.
   Otherwise, it will be treated as a normal `AbstractUnitRange`.

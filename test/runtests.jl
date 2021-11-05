@@ -27,8 +27,9 @@ using OffsetArrays
         @test !isempty(A[not(1), not(2), not(2)])
         I = Bool[0, 1, 0]
         J = Bool[1, 0, 1, 0]
-        @test A[not(I), not(J)] == A[.!I, .!J] ==
-            A[not(Base.to_index(I)), not(Base.to_index(J))]
+        @test A[not(I), not(J)] ==
+              A[.!I, .!J] ==
+              A[not(Base.to_index(I)), not(Base.to_index(J))]
         @test OA[not(1), not(2)] == OA[axes(OA, 1).!=1, axes(OA, 2).!=2] == A[:, not(3)]
         @test A[not(2)] ==
               A[not(CartesianIndex(2))] ==

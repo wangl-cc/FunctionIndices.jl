@@ -20,7 +20,9 @@ By default, `to_index(::AbstractArray, ind, i)` will return a
 """
 @inline to_index(::Type{T}, A, ind, i) where {T<:AbstractArray} = _to_logic_index(
     # use mappedarray instead of map for less allocations and more information
-    IndexStyle(A), A, mappedarray(to_function(i), ind)::ReadonlyMappedArray{Bool},
+    IndexStyle(A),
+    A,
+    mappedarray(to_function(i), ind)::ReadonlyMappedArray{Bool},
 ) # no type assert here, because this methods will accept any T even T is not a LogicalIndex
 
 _to_logic_index(::IndexLinear, A, i) = Base.LogicalIndex{Int}(i)
@@ -87,7 +89,7 @@ abstract type AbstractNotIndex{T} <: AbstractFunctionIndex end
     notin(item, collection)
     notin(collection)
 
-The same as `!in`, used by [`not`](@ref).
+The same as `!in`, used in the default `to_function` for `AbstractNotIndex`.
 """
 notin(item, collection) = !(item in collection)
 notin(collect) = Base.Fix2(notin, collect)
@@ -163,7 +165,7 @@ not(x::T, xs::T...) where {T} = not((x, xs...))
 
 # CartesianIndices and CartesianIndex should be difference
 const NotCartesian{N} =
-    Union{AbstractNotIndex{<:CartesianIndex{N}}, AbstractNotIndex{<:CartesianIndices{N}}}
+    Union{AbstractNotIndex{<:CartesianIndex{N}},AbstractNotIndex{<:CartesianIndices{N}}}
 
 # NotCartesian{0} will be ignored by to_indices
 # A[not(CartesianIndex()), 1] == A[1] like A[CartesianIndex(), 1] == A[1],
@@ -171,7 +173,7 @@ const NotCartesian{N} =
     to_indices(A, inds, Base.tail(I))
 # NotCartesian{N} will be convert to as Vararg{AbstractNotIndex{Int}, N}
 @inline Base.to_indices(A, inds, I::Tuple{<:NotCartesian,Vararg{Any}}) =
-        to_indices(A, inds, (_to_linear_nots(I[1])..., Base.tail(I)...))
+    to_indices(A, inds, (_to_linear_nots(I[1])..., Base.tail(I)...))
 
 # methods override Base.to_indices(A, ::Type{Any})
 # to avoid regard NotCartesian as a LinearIndex
@@ -216,12 +218,14 @@ to_index(::Type{<:AbstractArray}, A, ind, I::AbstractNotIndex{<:AbstractArray{Bo
 to_function(I::NotIndex{<:AbstractArray}) = notin(SetArray(parent(I)))
 ### For converted function index
 to_index(
-    ::Type{<:AbstractArray}, A, ind,
-    I::AbstractNotIndex{<:Base.LogicalIndex{<:Any, <:ReadonlyMappedArray{Bool}}}
+    ::Type{<:AbstractArray},
+    A,
+    ind,
+    I::AbstractNotIndex{<:Base.LogicalIndex{<:Any,<:ReadonlyMappedArray{Bool}}},
 ) = (rma = parent(I).mask; _not_mapped(A, rma.f, ind))
 _not_mapped(A, f, ind) = _to_logic_index(IndexStyle(A), A, mappedarray(!f, ind))
-_not_mapped(A, f::Base.Fix2{typeof(notin), <:Tuple}, ::Any) = TupleVector(f.x)
-_not_mapped(A, f::Base.Fix2{typeof(notin), <:SetArray}, ::Any) = parent(f.x)
+_not_mapped(A, f::Base.Fix2{typeof(notin),<:Tuple}, ::Any) = TupleVector(f.x)
+_not_mapped(A, f::Base.Fix2{typeof(notin),<:SetArray}, ::Any) = parent(f.x)
 
 ## Optimize only for indextype(I) == Vector{Int}
 const TVInt = Type{Vector{Int}}
@@ -271,8 +275,11 @@ function to_index(
     else # if slice is not equal to ind, invoke the method for unit range
         return invoke(
             to_index,
-            Tuple{TVInt, typeof(A), typeof(ind), AbstractNotIndex{<:AbstractUnitRange{Int}}},
-            Vector{Int}, A, ind, I
+            Tuple{TVInt,typeof(A),typeof(ind),AbstractNotIndex{<:AbstractUnitRange{Int}}},
+            Vector{Int},
+            A,
+            ind,
+            I,
         )::Vector{Int}
     end
 end
