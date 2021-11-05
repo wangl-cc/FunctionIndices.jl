@@ -3,6 +3,7 @@
 [![Build Status](https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml)
   [![codecov](https://codecov.io/gh/wangl-cc/FunctionIndices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/wangl-cc/FunctionIndices.jl)
 [![GitHub](https://img.shields.io/github/license/wangl-cc/FunctionIndices.jl)](https://github.com/wangl-cc/FunctionIndices.jl/blob/master/LICENSE)
+[![Docs stable](https://img.shields.io/badge/docs-dev-stable.svg)](https://wangl-cc.github.io/FunctionIndices.jl/stable/)
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://wangl-cc.github.io/FunctionIndices.jl/dev/)
 
 A small package allows to access array elements by a function via a simple wrapper `FI`.
@@ -70,7 +71,13 @@ julia> let bools = rand(Bool, size(A)); A[not(bools)] == A[Not(bools)] end
 true
 ```
 
-But for `CartesianIndex`, `A[not(CartesianIndex(i, j,..., n))]` is equivalent to `A[not(i), not(j), ..., not(n)]` and will return a array with same dimension but `A[Not(CartesianIndex(i, j,..., n))]` will convert the `CartesianIndex` to a linear index and return a vector:
+But for `CartesianIndex` and `CartesianIndices`,
+`A[not(CartesianIndex(i, j,...))]` is equivalent to `A[not(i), not(j), ...]`
+and `A[not(CartesianIndices((I, J,...))]` is equivalent to `A[not(I), not(J), ...]`.
+which return arrays with same dimension,
+while `A[Not(CartesianIndex(i, j,...))]`
+will convert the `CartesianIndex` to a linear index and return a vector,
+and `A[Not(CartesianIndices((I, J,...)))]` seams an undefined behavior.
 
 ```julia
 julia> A[not(CartesianIndex(1, 2))] # equivalent to A[not(1), not(2)]
@@ -90,8 +97,61 @@ julia> A[Not(CartesianIndex(1, 2))] # equivalent to A[Not(3)]
   9
  10
  11
+
+julia> A[not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # equivalent to A[not(1:2), not(2:3)]
+1×2 Matrix{Int64}:
+ 2  11
+
+julia> A[Not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # I don't know what is the meaning of this
+1×2 Matrix{Int64}:
+ 5  8
 ```
 
-Besides, for out of bounds index like `A[4, 5]`, `A[not(4), not(5)]` is equivalent to `A[:, :]`, because inbounds indices are not equal to the given value, while `A[Not[4], Not(5)]` causes an error.
+Besides, for out of bounds index like `A[4, 5]`, `A[not(4), not(5)]` is equivalent to `A[:, :]`,
+because inbounds indices are not equal to the given value, while `A[Not[4], Not(5)]` throws an error.
+
+## Optimizations for `not` with special index types
+
+For faster indexing,
+this package provides optimizations for `not` with some special index types,
+which means `not(x)` is not equivalent to `FI(!in(x))` for `x` belonging to those index types,
+and will be converted to different index types by `to_indices` function.
+
+There are two list of those index types, both of which are enabled for `not`,
+but for customized "NotIndex" types, you need to enable them by `indextype`.
+More about customized  "NotIndex" types and `indextype` can be found in
+[document](https://wangl-cc.github.io/FunctionIndices.jl/dev/).
+
+There optimizations are enabled for any "NotIndex" types by default:
+
+* `x::Colon` will be converted to an empty `Int` array: `Int[]`;
+* `x::AbstractArray{Bool}` will be converted to an `LogicalIndex` with mask `mappedarray(!, x)`;
+* `x::AbstractArray` will be converted like `FI(!in(x′))`,
+  while `x′` is a `Set` like array converted from `x` with faster `in`;
+* For `I′, J′ = to_indices(A, (not(I), not(J)))`, `not(I′)` and `not(I′)` will revert to `I`, `J`.
+
+There optimizations are enabled only if `indextype` is defined as `Vector{Int}`:
+
+* `x::Integer` will be converted to an `Int` array where `x` is removed from given axe.
+* `x::OrdinalRange{<:Integer}`  will be converted to an `Int` array
+  which is a set difference[^1] of `ind` and `x`
+  where `ind` is the axes of given array at given dimension;
+* `x::Base.Slice` will be converted to an empty `Int` array,
+  when the slice represents the given axe.
+  Otherwise, it will be treated as a normal `AbstractUnitRange`.
+
+## Performant tips for `not`
+
+For small array, the optimized `not(x)` might be slower in some case,
+because of the overhead for creating a `Set`.
+
+There are some tips for better performance:
+* Use `FI(!in(x))` instead of `not(x)`.
+* Create your own "Not" type, see [below example](@ref intro-define) for details.
+* For hand write indices like `not([1, 2, 3])`, `not(1, 2, 3)` will faster,
+  which create a `not` of `Tuple` instead of `Array`.
 
 More about this package see [document](https://wangl-cc.github.io/FunctionIndices.jl/dev/).
+
+[^1]: The set difference is not calculated by `setdiff` from `julia` base library,
+  but optimized for each `OrdinalRange` types. see source code of for details.
