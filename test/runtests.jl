@@ -2,14 +2,15 @@ using Test
 using FunctionIndices
 using OffsetArrays
 
+struct YANI{T} <: FunctionIndices.AbstractNotIndex{T}
+    parent::T
+end
+Base.parent(I::YANI) = I.parent
+YANI(x::T, xs::T...) where {T} = YANI((x, xs...))
+
 @testset "FunctionIndices" begin
     A = collect(reshape(1:12, 3, 4))
     OA = OffsetArray(A, 2:4, 0:3)
-    struct YANI{T} <: FunctionIndices.AbstractNotIndex{T}
-        parent::T
-    end
-    Base.parent(I::YANI) = I.parent
-    YANI(x::T, xs::T...) where {T} = YANI((x, xs...))
 
     @testset "FI" begin
         @test A[FI(iseven), FI(iseven)] == A[[2], [2, 4]]
