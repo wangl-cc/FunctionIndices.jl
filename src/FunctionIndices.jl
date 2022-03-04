@@ -229,17 +229,19 @@ _not_mapped(A, f::Base.Fix2{typeof(notin),<:SetArray}, ::Any) = parent(f.x)
 
 ## Optimize only for indextype(I) == Vector{Int}
 const TVInt = Type{Vector{Int}}
-to_index(::TVInt, A, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer}) =
-    (n = parent(I); [first(ind):(n-1); (n+1):last(ind)])::Vector{Int}
+function to_index(::TVInt, A, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer})
+    n = parent(I)
+    return n in ind ? [first(ind):(n-1); (n+1):last(ind)] : collect(ind)
+end
+
 function to_index(
     ::TVInt,
     A,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:AbstractUnitRange{<:Integer}},
 )
-    r = parent(I)
-    ret = isempty(r) ? collect(ind) : [first(ind):(first(r)-1); (last(r)+1):last(ind)]
-    return ret::Vector{Int}
+    r = _check_index(ind, parent(I))
+    return isempty(r) ? collect(ind) : [first(ind):(first(r)-1); (last(r)+1):last(ind)]
 end
 # to_index for NotIndex{<:StepRange} is suboptimal for small size arrays
 function to_index(
@@ -248,21 +250,21 @@ function to_index(
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:StepRange{<:Integer}},
 )
-    r = parent(I)
-    isempty(r) && return collect(ind) # collect ind for type stable
-    sr = sort(r)
-    mids = Vector{Int}(undef, last(sr) - first(sr) - length(sr) + 1)
-    i = 1 # index of mids
-    j = 1 # index of r
-    @inbounds for k = first(sr):last(sr)
-        if k == sr[j]
-            j += 1
-        else
-            mids[i] = k
-            i += 1
+    r = _check_index(ind, parent(I))
+    isempty(r) && return collect(ind)
+    # collect ind for type stable
+    step(r) == 1 && return [first(ind):first(r)-1; last(r)+1:last(ind)]
+    ret = Vector{Int}(undef, length(ind) - length(r))
+    copyto!(ret, first(ind):first(r)-1)
+    offset = first(r) - first(ind) + 1
+    @inbounds for i in 1:(last(r)-first(r))
+        if i % step(r) != 0
+            ret[offset] = i + first(r)
+            offset += 1
         end
     end
-    return [first(ind):(first(r)-1); mids; (last(r)+1):last(ind)]::Vector{Int}
+    copyto!(ret, offset, last(r)+1:last(ind))
+    return ret
 end
 function to_index(
     ::TVInt,
@@ -283,5 +285,17 @@ function to_index(
         )::Vector{Int}
     end
 end
+
+# process index like (1:2)[not(-1:3)] to (1:2)[not(1:2)]
+# and (1:2)[not(2:-1:1)] to (1:2)[not(1:2)]
+function _check_index(ind::AbstractUnitRange{<:Integer}, r::StepRange{<:Integer})
+    if step(r) > 0
+        return max(first(ind), first(r)):step(r):min(last(ind), last(r))
+    else
+        return max(first(ind), last(r)):-step(r):min(last(ind), first(r))
+    end
+end
+_check_index(ind::AbstractUnitRange{<:Integer}, r::AbstractUnitRange{<:Integer}) =
+    max(first(ind), first(r)):min(last(ind), last(r))
 
 end # module
