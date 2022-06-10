@@ -6,10 +6,13 @@
 [![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://wangl-cc.github.io/FunctionIndices.jl/stable/)
 [![Docs dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://wangl-cc.github.io/FunctionIndices.jl/dev/)
 
-A small package allows to access array elements by a function via a simple wrapper `FI`.
-As a special case, for indexing with `!=(n)`, `!in(itr)`, there is another wrapper `not` providing a convenient and optimized way.
-The `not` is similar to `Not` of [`InvertedIndices`](https://github.com/JuliaData/InvertedIndices.jl), but faster in some cases.
-Besides, this package also provides ways to change the behavior for special array types and function index types.
+A small package allows to index array with functions via a simple wrapper `FI`.
+For example, `A[FI(iseven)]` returns an array containing all elements of `A` whose indices instead of values are even, like `(0:3)[FI(iseven)] == [1, 3]`.
+To access elements whose values are even, try `filter(iseven, A)`.
+As a special case, for indexing with `!=(i)` or `!in(I)`, which are expected to get elements whose index are not is `i` or not in `I`,
+there is another wrapper `not` providing a convenient and optimized way.
+The `not` is similar to `Not` of [`InvertedIndices`](https://github.com/JuliaData/InvertedIndices.jl), but faster in some cases,
+see [performance comparing](https://wangl-cc.github.io/FunctionIndices.jl/stable/performance) for more informations.
 
 ## Quick start to index with function index
 
@@ -53,7 +56,7 @@ julia> A[map(isodd, begin:end), map(iseven, begin:end)]
  5  11
 ```
 
-`not` is an alternative to `Not` and in most cases they are equivalent:
+`not` is an alternative to `Not`, and in most cases they are equivalent:
 
 ```julia
 julia> using InvertedIndices
@@ -109,48 +112,3 @@ julia> A[Not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # seems an undefined be
 
 Besides, for out of bounds index like `A[4, 5]`, `A[not(4), not(5)]` is equivalent to `A[:, :]`,
 because inbounds indices are not equal to the given value, while `A[Not[4], Not(5)]` throws an error.
-
-## Optimizations for `not` with special index types
-
-For faster indexing,
-this package provides optimizations for `not` with some special index types,
-which means `not(x)` is not equivalent to `FI(!in(x))` for `x` belonging to those index types,
-and will be converted to different index types by `to_indices` function.
-
-There are two list of those index types, both of which are enabled for `not`,
-but for customized "NotIndex" types, you need to enable them by `indextype`.
-More about customized  "NotIndex" types and `indextype` can be found in
-[document](https://wangl-cc.github.io/FunctionIndices.jl/dev/).
-
-There optimizations are enabled for any "NotIndex" types by default:
-
-* `x::Colon` will be converted to an empty `Int` array: `Int[]`;
-* `x::AbstractArray{Bool}` will be converted to an `LogicalIndex` with mask `mappedarray(!, x)`;
-* `x::AbstractArray` will be converted like `FI(!in(x′))`,
-  while `x′` is a `Set` like array converted from `x` with faster `in`;
-* For `I′, J′ = to_indices(A, (not(I), not(J)))`, `not(I′)` and `not(I′)` will revert to `I`, `J`.
-
-There optimizations are enabled only if `indextype` is defined as `Vector{Int}`:
-
-* `x::Integer` will be converted to an `Int` array where `x` is removed from given axe.
-* `x::OrdinalRange{<:Integer}`  will be converted to an `Int` array
-  which is a set difference[^1] of given `ind` and `x`
-* `x::Base.Slice` will be converted to an empty `Int` array,
-  when the slice represents the given axe.
-  Otherwise, it will be treated as a normal `AbstractUnitRange`.
-
-## Performant tips for `not`
-
-For small array, the optimized `not(x)` might be slower in some case,
-because of the overhead for creating a `Set`.
-
-There are some tips for better performance:
-* Use `FI(!in(x))` instead of `not(x)`.
-* Create your own "Not" type, see [below example](@ref intro-define) for details.
-* For hand write indices like `not([1, 2, 3])`, `not(1, 2, 3)` will faster,
-  which create a `not` of `Tuple` instead of `Array`.
-
-More about this package see [document](https://wangl-cc.github.io/FunctionIndices.jl/dev/).
-
-[^1]: The set difference is not calculated by `setdiff` from `julia` base library,
-  but optimized for each `OrdinalRange` types. see source code of for details.
