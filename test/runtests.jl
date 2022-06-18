@@ -9,7 +9,7 @@ end
 Base.parent(I::YANI) = I.parent
 YANI(x::T, xs::T...) where {T} = YANI((x, xs...))
 
-if VERSION >= v"1.6"
+@static if VERSION >= v"1.6"
     using ArrayInterface
     using ArrayInterfaceOffsetArrays
     mods = (Base, ArrayInterface)
@@ -32,7 +32,7 @@ end
 @testset "FunctionIndices" begin
     A = collect(reshape(1:12, 3, 4))
     OA = OffsetArray(A, 2:4, 0:3)
-    @testset "$m.getindex" for m in (Base, ArrayInterface)
+    @testset "$m.getindex" for m in mods
         @testset "FI" begin
             @replace_ref m.getindex @test A[FI(iseven), FI(iseven)] == A[[2], [2, 4]]
             @replace_ref m.getindex @test OA[FI(iseven), FI(iseven)] == OA[[2, 4], [0, 2]] == A[[1, 3], [1, 3]]
