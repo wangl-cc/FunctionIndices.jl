@@ -8,6 +8,12 @@ end
 Base.parent(I::YANI) = I.parent
 YANI(x::T, xs::T...) where {T} = YANI((x, xs...))
 
+if isdefined(Base, :isexpr)
+    using Base: isexpr
+else
+    isexpr(ex, head::Symbol) = isa(ex, Expr) && ex.head === head
+end
+
 macro inferred_ref(ex::Expr)
     @assert length(ex.args) === 3
     @assert ex.args[1] === Symbol("@test")
