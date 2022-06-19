@@ -20,7 +20,7 @@ macro inferred_ref(ex::Expr)
     @assert ex.args[2] isa LineNumberNode
     @assert ex.args[3] isa Expr
     replace!(ex.args[3].args) do ex
-        if Base.isexpr(ex, :ref)
+        if isexpr(ex, :ref)
             # hide long LineNumberNode
             return Expr(:macrocall, Symbol("@inferred"), __source__, ex)
         else
