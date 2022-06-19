@@ -4,12 +4,10 @@ authors = ["Long Wang <wangl.cc@outlook.com>"]
 version = "0.3.0-DEV"
 
 [deps]
-ArrayInterfaceCore = "30b0a656-2188-435a-8636-2ec0e6a096e2"
 MappedArrays = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
-ArrayInterfaceCore = "0.1"
 MappedArrays = "0.3, 0.4"
 Requires = "1"
 julia = "1"

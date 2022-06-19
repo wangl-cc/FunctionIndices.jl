@@ -11,6 +11,7 @@ YANI(x::T, xs::T...) where {T} = YANI((x, xs...))
 
 @static if VERSION >= v"1.6"
     using ArrayInterface
+    using ArrayInterface.ArrayInterfaceCore
     using ArrayInterfaceOffsetArrays
     mods = (Base, ArrayInterface)
 else # ArrayInterface v6 is only available on julia v1.6+

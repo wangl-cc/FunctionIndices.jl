@@ -2,7 +2,6 @@ module FunctionIndices
 
 using Requires
 using MappedArrays
-import ArrayInterfaceCore
 
 export FI, NotIndex, not, notin
 
@@ -319,13 +318,14 @@ _to_ax_tuple(ax) = (ax,)
 _to_ax_tuple(ax::LinearIndices) = axes(ax)
 _to_ax_tuple(ax::CartesianIndices) = ax.indices
 
-# ndims_index for AbstractFunctionIndex
-# ArrayInterfaceCore.ndims_index(::Type{<:AbstractFunctionIndex}) = 1
-ArrayInterfaceCore.ndims_index(::Type{<:AbstractNotIndex{T}}) where {T} =
-    ArrayInterfaceCore.ndims_index(T)
-
 function __init__()
     @require ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9" begin
+        using ArrayInterface.ArrayInterfaceCore
+        # ndims_index for AbstractFunctionIndex
+        # ArrayInterfaceCore.ndims_index(::Type{<:AbstractFunctionIndex}) = 1
+        ArrayInterfaceCore.ndims_index(::Type{<:AbstractNotIndex{T}}) where {T} =
+            ArrayInterfaceCore.ndims_index(T)
+
         # all optimization is enabled for ArrayInterface
         ArrayInterface.to_index(s::IndexStyle, ax, i::AbstractFunctionIndex) =
             to_index(Vector{Int}, s, _to_linear_ax(ax), i)
