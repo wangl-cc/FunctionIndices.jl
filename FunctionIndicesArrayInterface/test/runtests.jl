@@ -1,6 +1,9 @@
 using Test
 using FunctionIndices
+using FunctionIndicesArrayInterface
 using OffsetArrays
+using ArrayInterface
+using ArrayInterfaceOffsetArrays
 
 struct YANI{T} <: FunctionIndices.AbstractNotIndex{T}
     parent::T
@@ -15,7 +18,7 @@ macro inferred_ref(ex::Expr)
     @assert ex.args[3] isa Expr
     replace!(ex.args[3].args) do ex
         if Base.isexpr(ex, :ref)
-            # hide long LineNumberNode
+            ex = Expr(:call, :(ArrayInterface.getindex), ex.args...)
             return Expr(:macrocall, Symbol("@inferred"), __source__, ex)
         else
             return ex

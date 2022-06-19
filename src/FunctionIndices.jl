@@ -308,35 +308,4 @@ end
 _check_index(ind::AbstractUnitRange{<:Integer}, r::AbstractUnitRange{<:Integer}) =
     max(first(ind), first(r)):min(last(ind), last(r))
 
-_to_linear_ax(ax) = ax
-_to_linear_ax(ax::LinearIndices{1}) = ax
-_to_linear_ax(ax::LinearIndices) = eachindex(IndexLinear(), ax)
-_to_linear_ax(ax::CartesianIndices{1}) = ax
-_to_linear_ax(ax::CartesianIndices) = eachindex(IndexLinear(), ax)
-
-_to_ax_tuple(ax) = (ax,)
-_to_ax_tuple(ax::LinearIndices) = axes(ax)
-_to_ax_tuple(ax::CartesianIndices) = ax.indices
-
-function __init__()
-    @require ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9" begin
-        using ArrayInterface.ArrayInterfaceCore
-        # ndims_index for AbstractFunctionIndex
-        # ArrayInterfaceCore.ndims_index(::Type{<:AbstractFunctionIndex}) = 1
-        ArrayInterfaceCore.ndims_index(::Type{<:AbstractNotIndex{T}}) where {T} =
-            ArrayInterfaceCore.ndims_index(T)
-
-        # all optimization is enabled for ArrayInterface
-        ArrayInterface.to_index(s::IndexStyle, ax, i::AbstractFunctionIndex) =
-            to_index(Vector{Int}, s, _to_linear_ax(ax), i)
-
-        ## NotCartesian
-        ArrayInterface.to_index(::IndexStyle, ax, ::NotCartesian{0}) = ()
-        ArrayInterface.to_index(s::IndexStyle, ax, i::NotCartesian{1}) =
-            to_index(Vector{Int}, s, _to_linear_ax(ax), _to_linear_nots(i)[1])
-        ArrayInterface.to_index(s::IndexStyle, axs, I::NotCartesian) =
-            map((ax, i) -> ArrayInterface.to_index(s, ax, i), _to_ax_tuple(axs), _to_linear_nots(I))
-    end
-end
-
 end # module
