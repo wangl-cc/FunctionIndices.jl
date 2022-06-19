@@ -4,7 +4,6 @@ authors = ["Long Wang <wangl.cc@outlook.com>"]
 version = "0.3.0-DEV"
 
 [deps]
-ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ArrayInterfaceCore = "30b0a656-2188-435a-8636-2ec0e6a096e2"
 MappedArrays = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
