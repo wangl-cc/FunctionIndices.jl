@@ -1,6 +1,5 @@
 module FunctionIndices
 
-using Requires
 using MappedArrays
 
 export FI, NotIndex, not, notin
