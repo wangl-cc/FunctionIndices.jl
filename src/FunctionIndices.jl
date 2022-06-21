@@ -12,24 +12,28 @@ Supertype of all function index types.
 abstract type AbstractFunctionIndex end
 
 """
-    FunctionIndices.to_index(::Type{T<:AbstractArray}, A, ind, i)
+    FunctionIndices.to_index(A, ind, i)
+    FunctionIndices.to_index(::Type{T}, S::IndexStyle, ind, i)
 
-Convert a `AbstractFunctionIndex` `i` to a array index of type `T` for `A` with `ind`.
-By default, `to_index(::AbstractArray, ind, i)` will return a
-`Base.LogicalIndex{Bool, ReadonlyMappedArray{Bool...}}`.
+Convert a index `i` to a array index with the given axis `ind`.
+By default, to_index(A::AbstractArray, ind, i) is defined as
+`to_index(indextype(A), IndexStyle(A), ind, i)`.
+To implement a custom index type with index type `T` and index style `S`,
+override `to_index(::Type{T<:AbstractArray}, S::IndexStyle, ind, i)`.
+If additional information is needed about the array `A`, override `to_index(A, ind, i)`.
 """
-@inline to_index(::Type{T}, A, ind, i) where {T<:AbstractArray} = _to_logic_index(
+@inline to_index(A, ind, I) = to_index(indextype(A, I), IndexStyle(A), ind, I)
+@inline to_index(::Type, S::IndexStyle, ind, i) = _to_logic_index(
+    S,
     # use mappedarray instead of map for less allocations and more information
-    IndexStyle(A),
-    A,
     mappedarray(to_function(i), ind)::ReadonlyMappedArray{Bool},
 ) # no type assert here, because this methods will accept any T even T is not a LogicalIndex
 
-_to_logic_index(::IndexLinear, A, i) = Base.LogicalIndex{Int}(i)
-_to_logic_index(::IndexStyle, A, i) = Base.to_index(A, i)
+_to_logic_index(::IndexLinear, i) = Base.LogicalIndex{Int}(i)
+_to_logic_index(::IndexStyle, i) = Base.to_index(i)
 
 @inline Base.to_indices(A, inds, I::Tuple{AbstractFunctionIndex,Vararg{Any}}) = (
-    to_index(indextype(A, I[1]), A, _maybefirst(inds), I[1]),
+    to_index(A, _maybefirst(inds), I[1]),
     to_indices(A, Base._maybetail(inds), Base.tail(I))...,
 )
 
@@ -210,33 +214,38 @@ Base.@propagate_inbounds Base.getindex(V::TupleVector{T,N}, i::Integer) where {T
 # Optimization for some special cases
 ## Optimization for any indextype(A)
 ### For not(::Colon), (not(::Slice) is only optimized for indextype{A} == Vector{Int})
-to_index(::Type{<:AbstractArray}, A, ind, ::AbstractNotIndex{<:Colon}) = []
+to_index(::Type{<:AbstractArray}, ::IndexStyle, ind, ::AbstractNotIndex{<:Colon}) = []
 ### For not(::AbstractArray{Bool})
-to_index(::Type{<:AbstractArray}, A, ind, I::AbstractNotIndex{<:AbstractArray{Bool}}) =
-    _to_logic_index(IndexStyle(A), A, mappedarray(!, parent(I)))
+to_index(::Type{<:AbstractArray}, S::IndexStyle, ind, I::AbstractNotIndex{<:AbstractArray{Bool}}) =
+    _to_logic_index(S, mappedarray(!, parent(I)))
 ### For not(::AbstractArray), only test if in like a Set for AbstractArray
 to_function(I::NotIndex{<:AbstractArray}) = notin(SetArray(parent(I)))
 ### For converted function index
 to_index(
     ::Type{<:AbstractArray},
-    A,
+    S::IndexStyle,
     ind,
     I::AbstractNotIndex{<:Base.LogicalIndex{<:Any,<:ReadonlyMappedArray{Bool}}},
-) = (rma = parent(I).mask; _not_mapped(A, rma.f, ind))
-_not_mapped(A, f, ind) = _to_logic_index(IndexStyle(A), A, mappedarray(!f, ind))
-_not_mapped(A, f::Base.Fix2{typeof(notin),<:Tuple}, ::Any) = TupleVector(f.x)
-_not_mapped(A, f::Base.Fix2{typeof(notin),<:SetArray}, ::Any) = parent(f.x)
+) = (rma = parent(I).mask; _not_mapped(S, rma.f, ind))
+_not_mapped(S, f, ind) = _to_logic_index(S, mappedarray(!f, ind))
+_not_mapped(::IndexStyle, f::Base.Fix2{typeof(notin),<:Tuple}, ::Any) = TupleVector(f.x)
+_not_mapped(::IndexStyle, f::Base.Fix2{typeof(notin),<:SetArray}, ::Any) = parent(f.x)
 
 ## Optimize only for indextype(I) == Vector{Int}
 const TVInt = Type{Vector{Int}}
-function to_index(::TVInt, A, ind::AbstractUnitRange{<:Integer}, I::AbstractNotIndex{<:Integer})
+function to_index(
+    ::TVInt,
+    ::IndexStyle,
+    ind::AbstractUnitRange{<:Integer},
+    I::AbstractNotIndex{<:Integer}
+)
     n = parent(I)
     return n in ind ? [first(ind):(n-1); (n+1):last(ind)] : collect(ind)
 end
 
 function to_index(
     ::TVInt,
-    A,
+    ::IndexStyle,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:AbstractUnitRange{<:Integer}},
 )
@@ -246,7 +255,7 @@ end
 # to_index for NotIndex{<:StepRange} is suboptimal for small size arrays
 function to_index(
     ::TVInt,
-    A,
+    ::IndexStyle,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:StepRange{<:Integer}},
 )
@@ -268,7 +277,7 @@ function to_index(
 end
 function to_index(
     ::TVInt,
-    A,
+    S::IndexStyle,
     ind::AbstractUnitRange{<:Integer},
     I::AbstractNotIndex{<:Base.Slice},
 )
@@ -277,9 +286,9 @@ function to_index(
     else # if slice is not equal to ind, invoke the method for unit range
         return invoke(
             to_index,
-            Tuple{TVInt,typeof(A),typeof(ind),AbstractNotIndex{<:AbstractUnitRange{Int}}},
+            Tuple{TVInt,typeof(S),typeof(ind),AbstractNotIndex{<:AbstractUnitRange{Int}}},
             Vector{Int},
-            A,
+            S,
             ind,
             I,
         )::Vector{Int}
