@@ -116,3 +116,24 @@ Besides, for out of bounds index like `A[4, 5]`,
 `A[not(4), not(5)]` is equivalent to `A[:, :]`,
 because inbounds indices are not equal to the given value,
 while `A[Not[4], Not(5)]` throws a `BoundsError`.
+
+This package is also compatible with `OffsetArrays`:
+```julia
+julia> using OffsetArrays
+
+julia> OA = OffsetArray(A, 2:4, 0:3)
+3×4 OffsetArray(reshape(::UnitRange{Int64}, 3, 4), 2:4, 0:3) with eltype Int64 with indices 2:4×0:3:
+ 0  3  6   9
+ 1  4  7  10
+ 2  5  8  11
+
+julia> OA[FI(iseven), FI(iseven)] # OA[[2, 4], [0, 2]]
+2×2 Matrix{Int64}:
+ 0  6
+ 2  8
+
+julia> OA[not(2), not(3)] # OA[[3, 4], [0, 1, 2]]
+2×3 Matrix{Int64}:
+ 1  4  7
+ 2  5  8
+```
