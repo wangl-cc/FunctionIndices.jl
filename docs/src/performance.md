@@ -1,15 +1,54 @@
-# [Performance comparing](@id performance)
+# Performance of `not`
 
-This is a performance comparing of "Invert Indexing" for different methods.
-There are four methods:
+## Optimizations for `not` with special index types
 
-- `bymap`: test if it is not in given `no` for each index of `A` by `map`,
-- `byfilter`: removing `no` from index by `filter`,
-- `byNot`: by `InvertedIndices.Not`,
-- `bynot`: by `not` of this package.
+For faster indexing, this package provides optimizations for `not` with some special index types,
+which means `not(x)` is not equivalent to `FI(!in(x))` for `x` belonging to those index types,
+and will be converted to different index types by `to_indices` function.
 
-This is the detail of benchmark.
-the minimum time of each methods for different type of index were compared:
+There are two list of those index types, both of which are enabled for `not`,
+but for customized `NotIndex` types, optimizations in second list is enabled
+when `indextype` returns `Vector{Int}`.
+
+There optimizations are enabled for any `AbstractNotIndex` types by default:
+
+- `x::Colon` will be converted to an empty `Int` array: `Int[]`;
+- `x::AbstractArray{Bool}` will be converted to a `LogicalIndex` with mask `mappedarray(!, x)`;
+- `x::AbstractArray` will be converted like `FI(!in(x′))`,
+  while `x′` is a `Set` like array converted from `x` with faster `in`;
+- For `I′, J′ = to_indices(A, (not(I), not(J)))`, `not(I′)` and `not(I′)` will revert to `I`, `J`.
+
+There optimizations are enabled only if `indextype` is defined as `Vector{Int}`:
+
+- `x::Integer or x::OrdinalRange{<:Integer}` will be converted to an `Int` array
+   where `x` is removed from given axis.
+- `x::Base.Slice` will be converted to an empty `Int` array,
+  when the slice represents the given axis,
+  Otherwise, it will be treated as a normal `AbstractUnitRange`.
+
+## Performance tips for `not`
+
+For small array, the optimized `not(x)` might be slower in some case,
+because of the overhead for creating a `Set`, see below.
+
+There are some tips for better performance:
+
+- Use `FI(!in(x))` instead of `not(x)`.
+- Create your own "Not" type, see [below example](@ref example) for details.
+- For a small array of indices, `not(1, 2, 3)` will faster than `not([1, 2, 3])`.
+
+## [Performance comparing](@id performance)
+
+This is a performance comparing of "Inverted Indexing" for different methods.
+There are five methods:
+
+- `bynot`: by `not` of this package;
+- `byfi`: by function index `FI(!in(I))`;
+- `bymap`: by logical indices which test `map(!in(I), axis)`;
+- `byfilter`: by removing `I` from axes by `filter`;
+- `byNot`: by `InvertedIndices.Not`.
+
+The minimum time and allocation of each method for different type of index were compared:
 
 ```@example performance
 using BenchmarkTools
@@ -18,18 +57,18 @@ using FunctionIndices
 using Latexify
 
 # Linear
-bynot(A, no) = A[not(no)]
-byfi(A, no) = A[FI(!in(no))]
-bymap(A, no) = A[map(!in(no), begin:end)]
-byfilter(A, no) = A[filter(!in(no), begin:end)]
-byNot(A, no) = A[Not(no)]
+bynot(A, I) = A[not(I)]
+byfi(A, I) = A[FI(!in(I))]
+bymap(A, I) = A[map(!in(I), begin:end)]
+byfilter(A, I) = A[filter(!in(I), begin:end)]
+byNot(A, I) = A[Not(I)]
 
 # Cartesian
-bynot(A, nos...) = A[ntuple(i -> not(nos[i]), Val(length(nos)))...]
-byfi(A, nos...) = A[ntuple(i -> FI(!in(nos[i])), Val(length(nos)))...]
-bymap(A, nos...) = A[ntuple(i -> map(!in(nos[i]), axes(A, i)), Val(length(nos)))...]
-byfilter(A, nos...) = A[ntuple(i -> filter(!in(nos[i]), axes(A, i)), Val(length(nos)))...]
-byNot(A, nos...) = A[ntuple(i -> Not(nos[i]), Val(length(nos)))...]
+bynot(A, Is...) = A[ntuple(i -> not(Is[i]), Val(length(Is)))...]
+byfi(A, Is...) = A[ntuple(i -> FI(!in(Is[i])), Val(length(Is)))...]
+bymap(A, Is...) = A[ntuple(i -> map(!in(Is[i]), axes(A, i)), Val(length(Is)))...]
+byfilter(A, Is...) = A[ntuple(i -> filter(!in(Is[i]), axes(A, i)), Val(length(Is)))...]
+byNot(A, Is...) = A[ntuple(i -> Not(Is[i]), Val(length(Is)))...]
 
 const As = (rand(10), rand(10, 10), rand(10, 10, 10))
 const fs = (bynot, byfi, bymap, byfilter, byNot)
@@ -73,7 +112,7 @@ maketable() do f, A
 end
 ```
 
-### Multi-dimensional Indexing
+### Multidimensional Indexing
 
 ```@example performance
 maketable() do f, A
@@ -84,7 +123,7 @@ end
 
 ## Indexing with `UnitRange`
 
-A random inbound `UnitRange` with half length of axe.
+A random inbound `UnitRange` with half-length of axe.
 
 ### Linear Indexing
 
@@ -98,7 +137,7 @@ maketable() do f, A
 end
 ```
 
-### Multi-dimensional Indexing
+### Multidimensional Indexing
 
 ```@example performance
 maketable() do f, A
@@ -118,7 +157,7 @@ end
 
 ## Indexing with `StepRange`
 
-A `StepRange` with step `2` and half length of axe.
+A `StepRange` with step `2`.
 
 ### Linear Indexing
 
@@ -129,7 +168,7 @@ maketable() do f, A
 end
 ```
 
-### Multi-dimensional Indexing
+### Multidimensional Indexing
 
 ```@example performance
 maketable() do f, A
@@ -157,7 +196,7 @@ maketable() do f, A
 end
 ```
 
-### Multi-dimensional Indexing
+### Multidimensional Indexing
 
 ```@example performance
 maketable() do f, A
