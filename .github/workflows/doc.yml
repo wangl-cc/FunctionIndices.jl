@@ -11,7 +11,12 @@ on:
       - "docs/**"
       - "Project.toml"
       - ".github/workflows/doc.yml"
-
+  pull_request:
+    paths:
+      - "src/**"
+      - "docs/**"
+      - "Project.toml"
+      - ".github/workflows/doc.yml"
 jobs:
   docs:
     name: Deploy Documentation
