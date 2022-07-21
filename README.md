@@ -82,7 +82,7 @@ where `not` treats inverted Cartesian indices as Cartesian inverted indices,
 and always returns an array with the same dimension.
 However, `A[Not(CartesianIndex(i, j,...))]`
 converts `CartesianIndex` to linear index and return a vector,
-and `A[Not(CartesianIndices((I, J,...)))]` seems an undefined behavior.
+and `A[Not(CartesianIndices((I, J,...)))]` seems an undefined behaviour.
 
 ```julia
 julia> A[not(CartesianIndex(1, 2))] # equivalent to A[not(1), not(2)]
