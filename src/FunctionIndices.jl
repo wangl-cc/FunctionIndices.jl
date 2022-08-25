@@ -29,12 +29,15 @@ _to_logic_index(::IndexLinear, A, i) = Base.LogicalIndex{Int}(i)
 _to_logic_index(::IndexStyle, A, i) = Base.to_index(A, i)
 
 @inline Base.to_indices(A, inds, I::Tuple{AbstractFunctionIndex,Vararg{Any}}) = (
-    to_index(indextype(A, I[1]), A, _maybefirst(inds), I[1]),
-    to_indices(A, Base._maybetail(inds), Base.tail(I))...,
+    to_index(indextype(A, I[1]), A, _safe_first(inds), I[1]),
+    to_indices(A, _safe_tail(inds), Base.tail(I))...,
 )
 
-_maybefirst(::Tuple{}) = Base.OneTo(1)
-_maybefirst(inds::Tuple) = inds[1]
+_safe_first(::Tuple{}) = Base.OneTo(1)
+_safe_first(inds::Tuple) = first(inds)
+
+_safe_tail(::Tuple{}) = ()
+_safe_tail(inds::Tuple) = Base.tail(inds)
 
 """
     indextype([A::AbstractArray,] I::AbstractFunctionIndex)
