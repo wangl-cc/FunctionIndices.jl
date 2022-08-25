@@ -10,7 +10,7 @@ on:
     paths:
       - "**Project.toml"
   schedule:
-    - cron: 0 0 * * *
+    - cron: 15 20 * * *
   workflow_dispatch:
 
 jobs:
@@ -22,8 +22,7 @@ jobs:
           import Pkg
           name = "CompatHelper"
           uuid = "aa819f21-2bde-4658-8897-bab36330d9b7"
-          version = "2"
-          Pkg.add(; name, uuid, version)
+          Pkg.add(; name, uuid)
         shell: julia --color=yes {0}
       - name: "Run CompatHelper"
         run: |
