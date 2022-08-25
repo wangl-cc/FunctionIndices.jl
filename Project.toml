@@ -1,7 +1,7 @@
 name = "FunctionIndices"
 uuid = "43668171-7344-4272-8ca6-106380bd294d"
 authors = ["Long Wang <wangl.cc@outlook.com>"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 MappedArrays = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
