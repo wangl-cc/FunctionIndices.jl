@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>FunctionIndices · FunctionIndices</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>FunctionIndices</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>FunctionIndices</a><ul class="internal"><li><a class="tocitem" href="#Quick-start-to-index-with-function-index"><span>Quick start to index with function index</span></a></li></ul></li><li><a class="tocitem" href="internal/">Internal</a></li><li><a class="tocitem" href="performance/">Performance of <code>not</code></a></li><li><a class="tocitem" href="referances/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>FunctionIndices</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>FunctionIndices</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/wangl-cc/FunctionIndices.jl/blob/master/README.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="FunctionIndices"><a class="docs-heading-anchor" href="#FunctionIndices">FunctionIndices</a><a id="FunctionIndices-1"></a><a class="docs-heading-anchor-permalink" href="#FunctionIndices" title="Permalink"></a></h1><p><a href="https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml"><img src="https://github.com/wangl-cc/FunctionIndices.jl/actions/workflows/ci.yml/badge.svg?branch=master" alt="Build Status"/></a> <a href="https://codecov.io/gh/wangl-cc/FunctionIndices.jl"><img src="https://codecov.io/gh/wangl-cc/FunctionIndices.jl/branch/master/graph/badge.svg" alt="codecov"/></a> <a href="https://github.com/wangl-cc/FunctionIndices.jl/blob/master/LICENSE"><img src="https://img.shields.io/github/license/wangl-cc/FunctionIndices.jl" alt="GitHub"/></a> <a href="https://wangl-cc.github.io/FunctionIndices.jl/stable/"><img src="https://img.shields.io/badge/docs-stable-blue.svg" alt="Docs stable"/></a> <a href="https://wangl-cc.github.io/FunctionIndices.jl/dev/"><img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Docs dev"/></a></p><p>A small package allows indexing array with functions via a simple wrapper <code>FI</code>. For example, <code>A[FI(iseven)]</code> returns an array containing all elements of <code>A</code> whose indices instead of values are even, like <code>(0:3)[FI(iseven)] == [1, 3]</code>. To access elements whose values are even, try <code>filter(iseven, A)</code>. As a special case, for indexing with <code>!=(i)</code> or <code>!in(I)</code>, which are expected to get elements whose index are not is <code>i</code> or not in <code>I</code>, there is another wrapper <code>not</code> providing a convenient and optimized way. The <code>not</code> is similar to <code>Not</code> of <a href="https://github.com/JuliaData/InvertedIndices.jl"><code>InvertedIndices</code></a>, but faster in some cases, see <a href="https://wangl-cc.github.io/FunctionIndices.jl/stable/performance">performance comparing</a> for more information.</p><h2 id="Quick-start-to-index-with-function-index"><a class="docs-heading-anchor" href="#Quick-start-to-index-with-function-index">Quick start to index with function index</a><a id="Quick-start-to-index-with-function-index-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-start-to-index-with-function-index" title="Permalink"></a></h2><p>1-d indexing <code>A[FI(f)]</code> is equivalent to <code>A[map(f, begin:end)]</code>, multidimensional indexing <code>A[FI(f1), ..., FI(fn)]</code> is equivalent to <code>A[map(FI(f1), axes(A, 1)), ..., map(FI(fn), axes(A, n))]</code>.</p><pre><code class="language-julia hljs">julia&gt; using FunctionIndices
+
+julia&gt; A = reshape(0:11, 3, 4)
+3×4 reshape(::UnitRange{Int64}, 3, 4) with eltype Int64:
+ 0  3  6   9
+ 1  4  7  10
+ 2  5  8  11
+
+julia&gt; A[FI(iseven)]
+6-element Vector{Int64}:
+  1
+  3
+  5
+  7
+  9
+ 11
+
+julia&gt; A[map(iseven, begin:end)]
+6-element Vector{Int64}:
+  1
+  3
+  5
+  7
+  9
+ 11
+
+julia&gt; A[FI(isodd), FI(iseven)]
+2×2 Matrix{Int64}:
+ 3   9
+ 5  11
+
+julia&gt; A[map(isodd, begin:end), map(iseven, begin:end)]
+2×2 Matrix{Int64}:
+ 3   9
+ 5  11</code></pre><p><code>not</code> is an alternative to <code>Not</code>, and in most cases they are equivalent:</p><pre><code class="language-julia hljs">julia&gt; using InvertedIndices
+
+julia&gt; A[not(1)] == A[Not(1)]
+true
+
+julia&gt; A[not(1, 2)] == A[Not(1, 2)]
+true
+
+julia&gt; A[not(1:2)] == A[Not(1:2)]
+true
+
+julia&gt; let I = rand(Bool, size(A)); A[not(I)] == A[Not(I)] end
+true</code></pre><p>But for <code>CartesianIndex</code> and <code>CartesianIndices</code>, <code>A[not(CartesianIndex(i, j,...))]</code> is equivalent to <code>A[not(i), not(j), ...]</code> and <code>A[not(CartesianIndices((I, J,...))]</code> is equivalent to <code>A[not(I), not(J), ...]</code>, where <code>not</code> treats inverted Cartesian indices as Cartesian inverted indices, and always returns an array with the same dimension. However, <code>A[Not(CartesianIndex(i, j,...))]</code> converts <code>CartesianIndex</code> to linear index and return a vector, and <code>A[Not(CartesianIndices((I, J,...)))]</code> seems an undefined behaviour.</p><pre><code class="language-julia hljs">julia&gt; A[not(CartesianIndex(1, 2))] # equivalent to A[not(1), not(2)]
+2×3 Matrix{Int64}:
+ 1  7  10
+ 2  8  11
+
+julia&gt; A[Not(CartesianIndex(1, 2))] # equivalent to A[Not(3)]
+11-element Vector{Int64}:
+  0
+  1
+  2
+  4
+  5
+  ⋮
+  8
+  9
+ 10
+ 11
+
+julia&gt; A[not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # equivalent to A[not(1:2), not(2:3)]
+1×2 Matrix{Int64}:
+ 2  11
+
+julia&gt; A[Not(CartesianIndex(1, 2):CartesianIndex(2, 3))] # seems an undefined behavior
+1×2 Matrix{Int64}:
+ 5  8</code></pre><p>Besides, for out of bounds index like <code>A[4, 5]</code>, <code>A[not(4), not(5)]</code> is equivalent to <code>A[:, :]</code>, because inbounds indices are not equal to the given value, while <code>A[Not[4], Not(5)]</code> throws a <code>BoundsError</code>.</p><p>This package is also compatible with <code>OffsetArrays</code>:</p><pre><code class="language-julia hljs">julia&gt; using OffsetArrays
+
+julia&gt; OA = OffsetArray(A, 2:4, 0:3)
+3×4 OffsetArray(reshape(::UnitRange{Int64}, 3, 4), 2:4, 0:3) with eltype Int64 with indices 2:4×0:3:
+ 0  3  6   9
+ 1  4  7  10
+ 2  5  8  11
+
+julia&gt; OA[FI(iseven), FI(iseven)] # OA[[2, 4], [0, 2]]
+2×2 Matrix{Int64}:
+ 0  6
+ 2  8
+
+julia&gt; OA[not(2), not(3)] # OA[[3, 4], [0, 1, 2]]
+2×3 Matrix{Int64}:
+ 1  4  7
+ 2  5  8</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="internal/">Internal »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.22 on <span class="colophon-date" title="Thursday 25 August 2022 07:29">Thursday 25 August 2022</span>. Using Julia version 1.8.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
